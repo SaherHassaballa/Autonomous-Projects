@@ -1,272 +1,390 @@
-# ESP32 RC Controller → PhoenixRC
+# ESP32 RC Controller → vJoy → XOutput → PhoenixRC
 
-A DIY RC controller using an ESP32, dual-axis joystick modules, vJoy, Python, XOutput, and the PhoenixRC emulator.
+A DIY RC controller using an ESP32, two dual-axis joystick modules,
+Python, vJoy, XOutput, ViGEmBus, and the PhoenixRC emulator.
 
 ## Architecture
 
-```text
-Joysticks
-    ↓
-  ESP32
-    ↓ USB Serial
-  Python
-    ↓
-  vJoy
-    ↓
- XOutput
-    ↓
- ViGEmBus
-    ↓
+``` text
+Dual Joysticks
+      ↓
+    ESP32
+      ↓ USB Serial @ 115200
+    Python
+      ↓
+    vJoy
+      ↓
+   XOutput
+      ↓
+   ViGEmBus
+      ↓
 Virtual Xbox Controller
-    ↓
+      ↓
 PhoenixRC Emulator
-    ↓
-PhoenixRC
+      ↓
+   PhoenixRC
 ```
 
----
+------------------------------------------------------------------------
 
 ## 1. Hardware
 
-Required:
+### Required
 
-* ESP32 DevKit / ESP32-WROOM
-* 2 × Dual-axis joystick modules
-* USB cable
-* Jumper wires
-* Windows PC
+-   ESP32 DevKit V1 / ESP32-WROOM
+-   2 × dual-axis joystick modules
+-   USB cable
+-   Jumper wires
+-   Windows PC
 
-### Joystick Mapping
+### Wiring
 
-| Physical Input | ESP32 GPIO | Function |
-| -------------- | ---------: | -------- |
-| Right VRx      |     GPIO 4 | Aileron  |
-| Right VRy      |     GPIO 2 | Elevator |
-| Left VRx       |    GPIO 36 | Rudder   |
-| Left VRy       |    GPIO 39 | Throttle |
+  Physical Input         ESP32 GPIO Function
+  -------------------- ------------ ----------
+  Right Joystick VRx         GPIO 4 Aileron
+  Right Joystick VRy         GPIO 2 Elevator
+  Left Joystick VRx         GPIO 36 Rudder
+  Left Joystick VRy         GPIO 39 Throttle
 
-> ⚠️ ESP32 ADC inputs must not receive more than 3.3 V.
+> **Electrical warning:** ESP32 ADC inputs must not receive more than
+> 3.3 V. Power the joystick modules from 3.3 V when compatible, or use
+> suitable voltage protection if their analog output can exceed 3.3 V.
 
----
+------------------------------------------------------------------------
 
 ## 2. ESP32 Firmware
 
 Upload the ESP32 firmware using Arduino IDE.
 
-The ESP32 sends the four analog values through USB Serial:
+The ESP32 reads the four analog axes and sends CSV data through USB
+Serial at approximately 50 Hz.
 
-```text
+### Serial format
+
+``` text
 Aileron,Elevator,Rudder,Throttle
 ```
 
 Example:
 
-```text
+``` text
 1898,1498,1914,1914
 ```
 
-Serial settings:
+### Serial settings
 
-```text
+``` text
 Baud Rate: 115200
 ```
 
-Verify the values change when moving the four joysticks.
+Open Serial Monitor and move all four joysticks. Make sure the values
+change.
 
----
+------------------------------------------------------------------------
 
-## 3. Python Environment
+## 3. Python Setup
 
-Activate the Conda environment:
+Create/use the Conda environment:
 
-```bash
+``` bash
 conda activate drone_env
 ```
 
 Install the required packages:
 
-```bash
+``` bash
 pip install pyserial pyvjoy
 ```
 
-Change the COM port in `esp32_vjoy.py` if necessary:
+Check the ESP32 COM port in:
 
-```python
+``` text
+Device Manager
+→ Ports (COM & LPT)
+```
+
+Then edit `esp32_vjoy.py`:
+
+``` python
 PORT = "COM3"
 BAUD = 115200
+VJOY_DEVICE_ID = 1
 ```
+
+Change `COM3` if Windows assigned another port.
 
 Run:
 
-```bash
+``` bash
 python esp32_vjoy.py
 ```
 
-Expected:
+Expected output:
 
-```text
+``` text
 Connecting to ESP32...
 ESP32 connected!
 Connecting to vJoy...
 vJoy connected!
 Controller is ready!
+
+AIL: 1500 | ELE: 1500 | RUD: 1500 | THR: 1500
 ```
 
----
+------------------------------------------------------------------------
 
-## 4. vJoy Setup
+## 4. Calibration
 
-Install and configure **vJoy**.
+The current calibration values are:
 
-Open:
+  Axis         MIN   CENTER    MAX
+  ---------- ----- -------- ------
+  Aileron        0     1898   4095
+  Elevator       0     1498   4095
+  Rudder         0     1914   4095
+  Throttle       0      ---   4095
 
-```text
+Centered axes are mapped approximately to:
+
+``` text
+MIN    → 1000
+CENTER → 1500
+MAX    → 2000
+```
+
+Throttle:
+
+``` text
+0    → 1000
+4095 → 2000
+```
+
+A ±20 deadzone is applied to Aileron, Elevator, and Rudder.
+
+------------------------------------------------------------------------
+
+## 5. vJoy Setup
+
+Install **vJoy** and open:
+
+``` text
 Configure vJoy
 ```
 
-Configure Device 1 with:
+Configure **Device 1** with:
 
-```text
+``` text
 X
 Y
 Z
 Rx
 ```
 
-Test the device:
+Test vJoy with:
 
-```text
+``` text
 Win + R
 → joy.cpl
 → vJoy Device
 → Properties
 ```
 
-Move the joysticks and verify the axes respond.
+The Python program should update the vJoy axes when the ESP32 joysticks
+are moved.
 
----
+------------------------------------------------------------------------
 
-## 5. XOutput
+## 6. XOutput Setup
 
-Install **XOutput** and **ViGEmBus**.
+Install and run:
 
-XOutput converts the vJoy DirectInput device into a virtual Xbox controller.
+-   XOutput
+-   ViGEmBus
 
-Recommended mapping:
+XOutput converts the vJoy DirectInput device into a virtual Xbox
+controller.
 
-```text
-vJoy X       → Xbox LX
-vJoy Y       → Xbox LY
-vJoy Rx      → Xbox RX
-vJoy Z       → Xbox RT
+### Tested XOutput Mapping
+
+The following mapping is the **tested working configuration for this
+project**:
+
+``` text
+LX → X Axis - vJoy Device
+LY → Y Axis - vJoy Device
+RX → X Axis - vJoy Device
+RY → Y Axis - vJoy Device
+LT → -
+RT → -
 ```
 
-Therefore:
+> **Important:** This mapping is intentionally kept exactly as tested
+> with this setup. Do not replace it with a generic vJoy/XInput mapping
+> unless you are changing the project configuration.
 
-```text
-Aileron  → LX
-Elevator → LY
-Rudder   → RX
-Throttle → RT
+After starting XOutput, Windows should detect a virtual Xbox controller.
+
+You can verify it using:
+
+``` text
+Win + R
+→ joy.cpl
 ```
 
-Start the XOutput controller.
+------------------------------------------------------------------------
 
-Verify that Windows detects:
+## 7. Test the Virtual Xbox Controller
 
-```text
-Xbox 360 Controller
-```
+Use an online gamepad tester and verify that the virtual Xbox controller
+responds to the joystick movements.
 
-You can test it using an online gamepad tester.
+The important point is that the controller must be detected by Windows
+before starting PhoenixRC.
 
----
+------------------------------------------------------------------------
 
-## 6. PhoenixRC Emulator
+## 8. PhoenixRC Emulator
 
-PhoenixRC normally expects its own USB interface. The emulator allows a Windows joystick/controller to be used with PhoenixRC.
+PhoenixRC normally expects its dedicated USB interface.
 
-### Emulator
+For this project, the virtual controller is passed to PhoenixRC using:
+
+**PhoenixRC_emu_v0_3**
 
 Download:
 
-[PhoenixRC_emu_v0_3.zip](https://drive.google.com/file/d/1CJnjsWPz2PvqQB3dnD5NKRyAPcTBAKJj/view?utm_source=chatgpt.com)
+https://drive.google.com/file/d/1CJnjsWPz2PvqQB3dnD5NKRyAPcTBAKJj/view
 
-Extract the emulator files.
+### Basic procedure
 
-The emulator is designed to let PhoenixRC use a joystick recognized by Windows instead of the original Phoenix USB interface.
+1.  Connect the ESP32.
+2.  Start the Python controller.
+3.  Start XOutput.
+4.  Make sure the virtual Xbox controller is detected.
+5.  Extract and start `PhoenixRC_emu_v0_3`.
+6.  Select/use the detected controller through the emulator.
+7.  Start PhoenixRC through the emulator.
+8.  Calibrate the transmitter in PhoenixRC.
 
-### Basic setup
+------------------------------------------------------------------------
 
-1. Make sure the virtual Xbox controller is running.
-2. Make sure Windows detects the controller.
-3. Install/copy the Phoenix emulator files according to the emulator package instructions.
-4. Run the emulator launcher.
-5. Select the detected controller/joystick.
-6. Launch PhoenixRC through the emulator.
+## 9. PhoenixRC Calibration
 
-The emulator launcher is intended to detect the Windows joystick and pass it to PhoenixRC as the expected interface.
+After PhoenixRC starts, use:
 
----
-
-## 7. PhoenixRC Calibration
-
-After PhoenixRC starts:
-
-```text
-System
-   ↓
+``` text
 Setup New Transmitter
 ```
 
-Move the four controls through their full ranges and follow the calibration wizard.
+Move the controls through their full range and complete the calibration.
 
-Configure:
+Then create/save the required control profile.
 
-```text
-Aileron
-Elevator
-Rudder
-Throttle
-```
+------------------------------------------------------------------------
 
-Then save the transmitter/control profile.
+## 10. Startup Procedure
 
----
+Every time the controller is used:
 
-## 8. Complete Startup Procedure
-
-Every time:
-
-```text
+``` text
 1. Connect ESP32
         ↓
 2. Start Python
         ↓
 3. Start XOutput
         ↓
-4. Verify Xbox Controller
+4. Verify virtual Xbox controller
         ↓
 5. Start PhoenixRC Emulator
         ↓
-6. Select the controller
+6. Start PhoenixRC
         ↓
-7. Launch PhoenixRC
+7. Calibrate / select control profile
         ↓
-8. Calibrate transmitter
-        ↓
-9. Fly 🚁✈️
+8. Fly ✈️
 ```
 
-### Troubleshooting
+------------------------------------------------------------------------
 
-If PhoenixRC does not detect the controller:
+## 11. Troubleshooting
 
-* Check that ESP32 values are changing.
-* Check `joy.cpl` and verify vJoy.
-* Check that XOutput is running.
-* Verify the virtual Xbox controller is detected by Windows.
-* Make sure the correct controller is selected in the emulator.
-* Restart PhoenixRC after changing controller settings.
+### ESP32 is detected but values do not change
 
-> **Important:** PhoenixRC should be launched through the emulator when using a generic/virtual controller. The normal PhoenixRC setup expects its dedicated USB interface.
+Check:
+
+-   Joystick wiring
+-   GPIO numbers
+-   ESP32 firmware
+-   Serial Monitor
+-   Baud rate = `115200`
+
+### Python cannot connect to ESP32
+
+Check:
+
+``` text
+PORT = "COMx"
+```
+
+Make sure no other application is using the ESP32 COM port.
+
+### vJoy does not respond
+
+Check:
+
+-   vJoy is enabled
+-   Device 1 exists
+-   X/Y/Z/Rx axes are enabled
+-   `VJOY_DEVICE_ID = 1`
+-   `joy.cpl` shows the vJoy device
+
+### Xbox controller is not detected
+
+Check:
+
+-   XOutput is running
+-   ViGEmBus is installed
+-   vJoy is working first
+-   Restart XOutput after changing the vJoy configuration
+
+### PhoenixRC does not detect the controller
+
+Check the complete chain:
+
+``` text
+ESP32
+ ↓
+Python
+ ↓
+vJoy
+ ↓
+XOutput
+ ↓
+Virtual Xbox Controller
+ ↓
+PhoenixRC Emulator
+ ↓
+PhoenixRC
+```
+
+Make sure every stage is working before troubleshooting the next one.
+
+------------------------------------------------------------------------
+
+## Project Status
+
+``` text
+ESP32 Joystick Input       ✅
+Python Serial Reader       ✅
+Python → vJoy               ✅
+vJoy → XOutput              ✅
+Virtual Xbox Controller     ✅
+PhoenixRC Emulator          ✅
+PhoenixRC Control           ✅
+```
+
+## Notes
+
+This README documents the configuration tested with this project. Axis
+mappings may differ on other PCs or different vJoy/XOutput
+configurations.
