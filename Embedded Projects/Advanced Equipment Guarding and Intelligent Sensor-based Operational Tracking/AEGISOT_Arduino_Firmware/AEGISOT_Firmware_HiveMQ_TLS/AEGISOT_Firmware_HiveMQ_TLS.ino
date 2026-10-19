@@ -15,11 +15,13 @@
     - Configure Wi-Fi and MQTT settings below.
     - Confirm motor stall current and TB6612FNG suitability before applying motor power.
     - Set ENCODER_COUNTS_PER_OUTPUT_REV from the encoder's exact datasheet.
-    - MQTT uses plain TCP (port 1883 by default); use only on a trusted lab network.
+    - MQTT to HiveMQ Cloud uses TLS on port 8883 and validates ISRG Root X1.
+    - NTP time sync is required so TLS certificate validity can be checked.
 */
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <Wire.h>
 #include <OneWire.h>
@@ -35,18 +37,56 @@
 #include <freertos/portmacro.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 
 // -----------------------------------------------------------------------------
 // 1) USER CONFIGURATION - EDIT THESE VALUES BEFORE CONNECTING TO MQTT
 // -----------------------------------------------------------------------------
-static const char* WIFI_SSID     = "CHANGE_ME";
-static const char* WIFI_PASSWORD = "CHANGE_ME";
+// Replace placeholders locally. Do not share or commit real credentials.
+static const char* WIFI_SSID     = "omar";
+static const char* WIFI_PASSWORD = "omar12345678";
 
 // Broker address on your own LAN/server; do not use a public broker for actuator control.
-static const char* MQTT_HOST = "CHANGE_ME";
-static constexpr uint16_t MQTT_PORT = 1883;
-static const char* MQTT_USERNAME = "";  // Leave empty only if broker allows anonymous access.
-static const char* MQTT_PASSWORD = "";
+static const char* MQTT_HOST = "3091b71eb24541b4a5593fa28711f867.s1.eu.hivemq.cloud";
+static constexpr uint16_t MQTT_PORT = 8883;
+static const char* MQTT_USERNAME = "SaherHassaballa";  // Leave empty only if broker allows anonymous access.
+static const char* MQTT_PASSWORD = "Saher12345678";
+
+// HiveMQ Cloud TLS root certificate (Let's Encrypt ISRG Root X1).
+// Source: https://letsencrypt.org/certs/isrgrootx1.pem
+static const char MQTT_ROOT_CA[] PROGMEM = R"AEGISOT_CERT(
+-----BEGIN CERTIFICATE-----
+MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
+WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
+ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
+MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
+h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
+0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
+A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
+T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
+B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
+B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
+KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
+OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
+jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
+qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
+rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
+HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
+hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
+ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
+3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
+NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
+ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
+TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
+jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
+oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
+4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
+mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
+emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
+-----END CERTIFICATE-----
+)AEGISOT_CERT";
 
 #define AEGISOT_DEVICE_ID "aegisot-node-01"
 #define AEGISOT_TOPIC_BASE "factory/devices/" AEGISOT_DEVICE_ID
@@ -101,7 +141,7 @@ static constexpr uint32_t MQTT_RETRY_INTERVAL_MS = 3000;
 // -----------------------------------------------------------------------------
 // 3) OBJECTS AND STATE
 // -----------------------------------------------------------------------------
-WiFiClient wifiClient;
+WiFiClientSecure wifiClient;
 PubSubClient mqttClient(wifiClient);
 
 OneWire oneWire(PIN_DS18B20);
@@ -120,6 +160,10 @@ bool motorDirectionForward = true;
 bool overcurrentFaultLatched = false;
 bool wifiAttempted = false;
 bool mqttAttempted = false;
+bool motorPwmReady = false;
+bool systemClockSynced = false;
+bool ntpSyncRequested = false;
+uint32_t lastNtpRequestMs = 0;
 
 float temperatureC = NAN;
 float accelX = NAN, accelY = NAN, accelZ = NAN;
@@ -181,6 +225,12 @@ void motorStop() {
 }
 
 void motorStart(bool forward, uint8_t speedPct) {
+  // Refuse actuation if LEDC PWM did not initialize correctly.
+  if (!motorPwmReady) {
+    motorStop();
+    Serial.println("SAFETY: motor start refused because PWM is not ready");
+    return;
+  }
   if (speedPct == 0) {
     motorStop();
     return;
@@ -566,11 +616,35 @@ void handleMqttCommand(char* topic, byte* payload, unsigned int length) {
 // 8) NETWORK SERVICES
 // -----------------------------------------------------------------------------
 bool wifiConfigurationReady() {
-  return WIFI_SSID[0] != '\0' && strcmp(WIFI_SSID, "CHANGE_ME") != 0;
+  return WIFI_SSID[0] != '\0' && strcmp(WIFI_SSID, "CHANGE_ME_WIFI_SSID") != 0 &&
+         WIFI_PASSWORD[0] != '\0' && strcmp(WIFI_PASSWORD, "CHANGE_ME_WIFI_PASSWORD") != 0;
 }
 
 bool mqttConfigurationReady() {
-  return MQTT_HOST[0] != '\0' && strcmp(MQTT_HOST, "CHANGE_ME") != 0;
+  return MQTT_HOST[0] != '\0' && strcmp(MQTT_HOST, "CHANGE_ME") != 0 &&
+         MQTT_USERNAME[0] != '\0' && strcmp(MQTT_USERNAME, "CHANGE_ME_MQTT_USERNAME") != 0 &&
+         MQTT_PASSWORD[0] != '\0' && strcmp(MQTT_PASSWORD, "CHANGE_ME_MQTT_PASSWORD") != 0;
+}
+
+// HiveMQ Cloud certificates have validity dates. NTP synchronizes the ESP32 clock
+// before TLS starts so certificate validation works correctly.
+void serviceSystemClock(uint32_t now) {
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  const time_t epoch = time(nullptr);
+  if (epoch > 1700000000) {
+    if (!systemClockSynced) Serial.println("System clock synchronized; TLS certificate checks enabled");
+    systemClockSynced = true;
+    return;
+  }
+
+  systemClockSynced = false;
+  if (!ntpSyncRequested || (uint32_t)(now - lastNtpRequestMs) >= 30000) {
+    configTime(0, 0, "pool.ntp.org", "time.google.com");
+    ntpSyncRequested = true;
+    lastNtpRequestMs = now;
+    Serial.println("Waiting for NTP time sync before TLS connection...");
+  }
 }
 
 void serviceWiFi(uint32_t now) {
@@ -590,6 +664,10 @@ void serviceWiFi(uint32_t now) {
 
 bool connectMqtt() {
   motorStop();
+  if (!systemClockSynced) {
+    Serial.println("MQTT TLS connection deferred: system clock is not synchronized");
+    return false;
+  }
   createRandomToken(sessionId); // Rotate before subscribing so stale retained drive commands are rejected.
 
   const uint64_t mac = ESP.getEfuseMac();
@@ -628,7 +706,7 @@ bool connectMqtt() {
 }
 
 void serviceMqtt(uint32_t now) {
-  if (WiFi.status() != WL_CONNECTED || !mqttConfigurationReady()) {
+  if (WiFi.status() != WL_CONNECTED || !mqttConfigurationReady() || !systemClockSynced) {
     if (motorRunning) motorStop();
     return;
   }
@@ -671,7 +749,10 @@ void setup() {
   digitalWrite(PIN_MOTOR_AIN2, LOW);
   pinMode(PIN_MOTOR_PWMA, OUTPUT);
   digitalWrite(PIN_MOTOR_PWMA, LOW);
-  setupMotorPwm();
+  motorPwmReady = setupMotorPwm();
+  if (!motorPwmReady) {
+    Serial.println("FATAL SAFETY: PWM initialization failed; motor actuation disabled");
+  }
   motorStop();
 
   Serial.begin(115200);
@@ -683,7 +764,8 @@ void setup() {
   Serial.println("====================================");
   createRandomToken(bootId);
 
-  // Encoder pins use internal pull-ups as a starting point. Verify output type and voltage.
+  // Encoder pins use internal pull-ups as a starting point. Encoder outputs MUST be 3.3V-safe;
+  // never connect a 5V push-pull encoder signal directly to an ESP32 GPIO.
   pinMode(PIN_ENCODER_A, INPUT_PULLUP);
   pinMode(PIN_ENCODER_B, INPUT_PULLUP);
   encoderPreviousAB = (uint8_t)((digitalRead(PIN_ENCODER_A) << 1) | digitalRead(PIN_ENCODER_B));
@@ -698,6 +780,8 @@ void setup() {
   Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL);
   tryInitializeI2CDevices(millis());
 
+  // Validate the broker identity using the CA certificate; never disable verification.
+  wifiClient.setCACert(MQTT_ROOT_CA);
   mqttClient.setServer(MQTT_HOST, MQTT_PORT);
   mqttClient.setCallback(handleMqttCommand);
   mqttClient.setBufferSize(1024);
@@ -707,10 +791,10 @@ void setup() {
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
   if (!wifiConfigurationReady()) {
-    Serial.println("CONFIG REQUIRED: edit WIFI_SSID and WIFI_PASSWORD in the sketch.");
+    Serial.println("CONFIG REQUIRED: edit WIFI_SSID and WIFI_PASSWORD placeholders in the sketch.");
   }
   if (!mqttConfigurationReady()) {
-    Serial.println("CONFIG REQUIRED: edit MQTT_HOST (and credentials if required) in the sketch.");
+    Serial.println("CONFIG REQUIRED: edit MQTT_USERNAME and MQTT_PASSWORD placeholders in the sketch.");
   }
   Serial.printf("Topics:\n  telemetry: %s\n  status:    %s\n  commands:  %s\n",
                 TOPIC_TELEMETRY, TOPIC_STATUS, TOPIC_COMMANDS);
@@ -721,6 +805,7 @@ void loop() {
   const uint32_t now = millis();
 
   serviceWiFi(now);
+  serviceSystemClock(now);
   serviceMqtt(now);
   serviceTemperature(now);
   serviceMpuSampling(now);
