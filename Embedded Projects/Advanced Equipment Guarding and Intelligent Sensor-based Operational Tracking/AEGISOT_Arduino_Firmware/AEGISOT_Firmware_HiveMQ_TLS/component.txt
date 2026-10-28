@@ -1,8 +1,0 @@
-1 - ESP32-WROOM-32
-2 - DS18B20 waterproof temperature (https://makerselectronics.com/product/ds18b20-waterproof-temperature-senso/?srsltid=AU7gw4UHpOa-70SUj7g42CVIh0xACjwxbmVe0Vnos_rDRcpMVTAKkLoJ)
-3 - MPU6050 acceleration and angular-rate telemetry over I2C (https://makerselectronics.com/product/mpu-6050-imu-sensor-module-with-6-dof-gyroscope-accelerometer/)
-4 - INA219 bus voltage, current, shunt voltage and power telemetry over I2C (https://makerselectronics.com/product/ina219-dc-current-measurement-sensor/)
-5 - Motor (https://eg.rsdelivers.com/product/rs-pro/rs-pro-brushed-dc-motor-121-w-15v-dc-3-v-dc-104-2/2389692)
-6 - TB6612FNG (https://makerselectronics.com/product/tb6612fng-motor-driver/?srsltid=AU7gw4UvIIkKTKyypEzcEJyNyq660DIPUmgGfYk81tOWS2_azoFaymfW)
-
-

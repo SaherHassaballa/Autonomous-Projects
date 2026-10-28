@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AEGISOT | Experiment Monitor</title>
+<style>
+:root{--bg:#08111f;--panel:#101c2e;--panel2:#132238;--line:#24364e;--text:#e8f0fb;--muted:#91a4bf;--cyan:#5ee7f5;--green:#55e6a5;--amber:#ffcc66;--red:#ff657a;--violet:#b6a0ff;--shadow:0 14px 40px #0003}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1000px 500px at 75% -10%,#15304b 0%,transparent 65%),var(--bg);color:var(--text);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+button,input{font:inherit}button{cursor:pointer}.app{max-width:1500px;margin:auto;padding:22px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:20px}.brand{display:flex;align-items:center;gap:13px}.brandmark{width:44px;height:44px;border-radius:14px;background:linear-gradient(145deg,#60e9f5,#4f86ff);display:grid;place-items:center;color:#06111f;font-weight:950;font-size:20px;box-shadow:0 8px 24px #51dff333}.brand h1{font-size:20px;letter-spacing:.09em;margin:0}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}.top-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.pill{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#101b2b;padding:8px 11px;border-radius:999px;color:var(--muted);font-size:12px}.led{width:8px;height:8px;border-radius:50%;background:#65748a;display:inline-block;box-shadow:0 0 0 4px #65748a18}.led.green{background:var(--green);box-shadow:0 0 0 4px #55e6a51b}.led.red{background:var(--red);box-shadow:0 0 0 4px #ff657a25;animation:pulse 1.1s infinite}.led.amber{background:var(--amber);box-shadow:0 0 0 4px #ffcc661e}@keyframes pulse{50%{box-shadow:0 0 0 8px #ff657a08;opacity:.6}}
+.btn{border:1px solid var(--line);background:#17263a;color:var(--text);border-radius:10px;padding:10px 13px;transition:.15s}.btn:hover{border-color:#54708f;transform:translateY(-1px)}.btn.primary{background:linear-gradient(135deg,#50dfe9,#58b9ff);border:0;color:#06121f;font-weight:800}.btn.stop{background:#351a2a;border-color:#6c2e43;color:#ff9eac}.btn.small{padding:7px 10px;font-size:12px}.layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(310px,.85fr);gap:16px}.left,.right{display:grid;gap:16px;align-content:start}.panel{background:linear-gradient(180deg,#122035eF,#0f1a2b);border:1px solid var(--line);border-radius:17px;padding:17px;box-shadow:var(--shadow);min-width:0}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:15px}.panel-head h2{font-size:14px;letter-spacing:.02em;margin:0}.sub{color:var(--muted);font-size:12px}.overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.metric{border:1px solid var(--line);border-radius:13px;background:#0b1626;padding:14px;min-width:0}.metric .label{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:7px}.metric .value{font-size:25px;font-weight:750;letter-spacing:-.04em;margin-top:9px;white-space:nowrap}.metric .unit{font-size:12px;color:var(--muted);font-weight:500;letter-spacing:0}.metric .foot{font-size:11px;color:var(--muted);margin-top:5px}.ico{width:25px;height:25px;border-radius:8px;display:inline-grid;place-items:center;font-size:14px;background:#1d344b;color:var(--cyan);flex-shrink:0}.ico.hot{color:var(--amber);background:#3a3023}.ico.vibe{color:var(--violet);background:#2c2844}.ico.rpm{color:#77d9ff;background:#1c3046}
+.stage-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.stage{position:relative;border:1px solid var(--line);border-radius:13px;padding:13px;background:#0b1626;min-height:124px;overflow:hidden}.stage.active{border-color:var(--green);box-shadow:inset 0 0 0 1px #55e6a526;background:linear-gradient(145deg,#112b30,#0b1626)}.stage.active:after{content:"";position:absolute;right:-18px;top:-20px;width:70px;height:70px;border-radius:50%;background:#55e6a50c}.stage .stage-top{display:flex;align-items:center;justify-content:space-between;gap:6px}.stage .stage-name{font-weight:750;margin-top:12px}.stage .stage-desc{font-size:11px;color:var(--muted);margin-top:4px}.state{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);display:flex;align-items:center;gap:6px}.stage.active .state{color:var(--green)}.stage .stage-count{font-size:12px;margin-top:12px;color:#bdcde1}.progress{height:5px;border-radius:9px;background:#24364b;overflow:hidden;margin-top:8px}.progress>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--green));transition:width .3s}
+.timerbox{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px;border-radius:14px;background:#091524;border:1px solid var(--line)}.timer-label{color:var(--muted);font-size:12px}.timer{font-variant-numeric:tabular-nums;font-size:34px;font-weight:800;letter-spacing:.02em;margin-top:3px}.timer-actions{display:flex;gap:8px;flex-wrap:wrap}.timeline{display:flex;align-items:center;gap:8px;margin-top:12px;color:var(--muted);font-size:11px}.barline{height:4px;flex:1;background:#24364b;border-radius:9px;overflow:hidden}.barline span{display:block;width:0;height:100%;background:var(--green)}
+.chart-wrap{height:235px;position:relative}.chart-wrap canvas{width:100%;height:100%;display:block}.chart-legend{display:flex;gap:13px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-top:8px}.legend-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}.sensor-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.sensor{background:#0b1626;border:1px solid var(--line);border-radius:12px;padding:12px}.sensor-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.sensor h3{font-size:12px;margin:0}.sensor .sensor-val{font-size:20px;font-weight:750;margin-top:10px}.sensor .sensor-unit{font-size:11px;color:var(--muted);font-weight:500}.sensor .sensor-meta{font-size:11px;color:var(--muted);margin-top:5px}.tiny-status{font-size:10px;color:var(--green);display:flex;align-items:center;gap:5px}.tiny-status.invalid{color:var(--amber)}.log{max-height:190px;overflow:auto;display:grid;gap:8px}.logrow{display:grid;grid-template-columns:68px 8px 1fr;align-items:start;gap:9px;font-size:12px;color:#b7c6da}.logtime{color:#6f86a5;font-variant-numeric:tabular-nums}.logdot{width:7px;height:7px;border-radius:50%;background:var(--cyan);margin-top:5px}.logrow.warn .logdot{background:var(--amber)}.logrow.ok .logdot{background:var(--green)}.footnote{font-size:11px;color:var(--muted);line-height:1.6}.data-actions{display:flex;gap:8px;flex-wrap:wrap}.tag{border:1px solid var(--line);border-radius:7px;padding:4px 7px;color:var(--muted);font-size:10px}.modal-backdrop{position:fixed;inset:0;background:#030914c9;display:none;align-items:center;justify-content:center;padding:20px;z-index:20}.modal-backdrop.show{display:flex}.modal{max-width:440px;width:100%;background:#132238;border:1px solid #38516f;border-radius:18px;padding:22px;box-shadow:0 30px 90px #0008}.modal h2{margin:0 0 8px}.modal p{color:var(--muted);line-height:1.65}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.file-input{display:none}.notice{border:1px dashed #354d68;border-radius:11px;padding:10px 12px;color:var(--muted);font-size:11px;line-height:1.6}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}.overview{grid-template-columns:repeat(2,minmax(0,1fr))}.stage-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.app{padding:12px}.topbar{align-items:flex-start;flex-direction:column}.overview{grid-template-columns:repeat(2,minmax(0,1fr))}.metric .value{font-size:22px}.stage-grid{grid-template-columns:1fr 1fr}.timerbox{align-items:flex-start;flex-direction:column}.sensor-grid{grid-template-columns:1fr}.panel{padding:13px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><div class="brandmark">A</div><div><h1>AEGISOT <span style="color:var(--cyan)">/</span> EXPERIMENT MONITOR</h1><p>Motor health • Sensor telemetry • Guided data collection</p></div></div>
+    <div class="top-actions">
+      <span class="pill"><span id="sourceLed" class="led amber"></span><span id="sourceLabel">DEMO DATA</span></span>
+      <span class="pill"><span id="recordLed" class="led"></span><span id="recordLabel">Recording OFF</span></span>
+      <button class="btn small" id="demoToggle">Refresh status</button>
+      <label class="btn small" for="csvFile">Import CSV</label><input id="csvFile" class="file-input" type="file" accept=".csv,text/csv">
+    </div>
+  </header>
+
+  <div class="layout">
+    <main class="left">
+      <section class="panel">
+        <div class="panel-head"><h2>Live overview</h2><span class="sub" id="lastUpdate">Waiting for data…</span></div>
+        <div class="overview">
+          <div class="metric"><div class="label"><span class="ico">ϟ</span> Bus voltage</div><div class="value"><span id="voltage">11.72</span> <span class="unit">V</span></div><div class="foot">INA219 power monitor</div></div>
+          <div class="metric"><div class="label"><span class="ico">↯</span> Current</div><div class="value"><span id="current">250.3</span> <span class="unit">mA</span></div><div class="foot">Live electrical load</div></div>
+          <div class="metric"><div class="label"><span class="ico hot">♨</span> Temperature</div><div class="value"><span id="temperature">34.25</span> <span class="unit">°C</span></div><div class="foot" id="tempFoot">DS18B20 • valid</div></div>
+          <div class="metric"><div class="label"><span class="ico rpm">◉</span> Encoder rate</div><div class="value"><span id="cps">0</span> <span class="unit">counts/s</span></div><div class="foot">RPM <span id="rpm">unconfigured</span></div></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Experiment stages</h2><span class="tag">4 stages · 5 min each · 5 Hz target</span></div>
+        <div class="stage-grid" id="stageGrid">
+          <div class="stage" data-stage="normal"><div class="stage-top"><span class="ico">✓</span><span class="state"><i class="led"></i> Standby</span></div><div class="stage-name">Normal</div><div class="stage-desc">Baseline operation</div><div class="stage-count">0 / 1500 samples</div><div class="progress"><span></span></div></div>
+          <div class="stage" data-stage="overheated"><div class="stage-top"><span class="ico hot">♨</span><span class="state"><i class="led"></i> Standby</span></div><div class="stage-name">Overheated</div><div class="stage-desc">Thermal anomaly</div><div class="stage-count">0 / 1500 samples</div><div class="progress"><span></span></div></div>
+          <div class="stage" data-stage="vibration_issue"><div class="stage-top"><span class="ico vibe">〰</span><span class="state"><i class="led"></i> Standby</span></div><div class="stage-name">Vibration issue</div><div class="stage-desc">Abnormal vibration</div><div class="stage-count">0 / 1500 samples</div><div class="progress"><span></span></div></div>
+          <div class="stage" data-stage="rpm_issue"><div class="stage-top"><span class="ico rpm">◉</span><span class="state"><i class="led"></i> Standby</span></div><div class="stage-name">RPM issue</div><div class="stage-desc">Speed anomaly</div><div class="stage-count">0 / 1500 samples</div><div class="progress"><span></span></div></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Recording control</h2><span class="sub">Manual start • manual stop • no auto-advance</span></div>
+        <div class="timerbox">
+          <div><div class="timer-label">ACTIVE STAGE TIMER</div><div class="timer" id="timer">00:00 <span style="font-size:13px;color:var(--muted);font-weight:500">/ 05:00</span></div><div class="sub" id="timerHint">Choose a stage to review it before starting.</div></div>
+          <div class="timer-actions"><button class="btn primary" id="chooseStage">Choose stage</button><button class="btn stop" id="stopRecord" disabled>■ Stop recording</button></div>
+        </div>
+        <div class="timeline"><span>0:00</span><div class="barline"><span id="timerProgress"></span></div><span>5:00 target</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-top:15px">
+          <div><div style="font-weight:750" id="activeStageText">No active stage</div><div class="sub" id="activeStageDetail">The timer resets when a new stage starts.</div></div>
+          <div class="data-actions"><button class="btn small" id="exportCsv">Download session CSV</button><button class="btn small" id="clearHistory">Refresh display</button></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Live trends</h2><div class="data-actions"><span class="tag">Voltage</span><span class="tag">Current</span><span class="tag">Temperature</span></div></div>
+        <div class="chart-wrap"><canvas id="chart" aria-label="Live sensor trends"></canvas></div>
+        <div class="chart-legend"><span><i class="legend-dot" style="background:#5ee7f5"></i>Voltage (V)</span><span><i class="legend-dot" style="background:#ffcc66"></i>Current (scaled)</span><span><i class="legend-dot" style="background:#b6a0ff"></i>Temperature (scaled)</span></div>
+      </section>
+    </main>
+
+    <aside class="right">
+      <section class="panel">
+        <div class="panel-head"><h2>Motor & encoder</h2><span class="pill"><span id="motorLed" class="led"></span><span id="motorState">Stopped</span></span></div>
+        <div class="sensor-grid">
+          <div class="sensor"><div class="sensor-head"><h3>Motor speed</h3><span class="tiny-status"><i class="led"></i> telemetry</span></div><div class="sensor-val"><span id="speed">0</span><span class="sensor-unit"> %</span></div><div class="sensor-meta">PWM duty: <span id="pwm">0</span> / 255</div></div>
+          <div class="sensor"><div class="sensor-head"><h3>Direction</h3><span class="ico">↔</span></div><div class="sensor-val" id="direction">Forward</div><div class="sensor-meta">From device telemetry</div></div>
+          <div class="sensor"><div class="sensor-head"><h3>Encoder count</h3><span class="ico rpm">⌁</span></div><div class="sensor-val" id="encoder">0</div><div class="sensor-meta">Delta: <span id="encoderDelta">0</span> / interval</div></div>
+          <div class="sensor"><div class="sensor-head"><h3>Electrical power</h3><span class="ico">ϟ</span></div><div class="sensor-val"><span id="power">2.94</span><span class="sensor-unit"> mW</span></div><div class="sensor-meta">Fault: <span id="fault">None</span></div></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Motor controls</h2><span class="sub">Commands go to ESP32 over USB Serial</span></div>
+        <div class="data-actions" style="margin-bottom:10px">
+          <button class="btn small" data-motor-command="forward">↗ Forward</button>
+          <button class="btn small" data-motor-command="reverse">↙ Reverse</button>
+          <button class="btn small" data-motor-command="up">＋ Speed 5%</button>
+          <button class="btn small" data-motor-command="down">− Speed 5%</button>
+          <button class="btn stop small" data-motor-command="stop">■ STOP motor</button>
+        </div>
+        <div class="data-actions">
+          <button class="btn small" data-motor-command="zero_encoder">Zero encoder</button>
+          <button class="btn small" data-motor-command="clear_fault">Clear current fault</button>
+        </div>
+        <p class="footnote" style="margin-bottom:0">The firmware enforces its own safety checks. Direction changes stop the motor first. STOP recording does not stop the motor; the motor STOP button does.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Motion & vibration</h2><span class="tag">MPU6050</span></div>
+        <div class="sensor-grid">
+          <div class="sensor"><div class="sensor-head"><h3>Acceleration X</h3><span class="tiny-status" id="mpuStatus"><i class="led green"></i> valid</span></div><div class="sensor-val" id="ax">-9.203</div><div class="sensor-meta">m/s²</div></div>
+          <div class="sensor"><div class="sensor-head"><h3>Acceleration Y</h3></div><div class="sensor-val" id="ay">0.023</div><div class="sensor-meta">m/s²</div></div>
+          <div class="sensor"><div class="sensor-head"><h3>Acceleration Z</h3></div><div class="sensor-val" id="az">0.758</div><div class="sensor-meta">m/s²</div></div>
+          <div class="sensor"><div class="sensor-head"><h3>Vibration index</h3><span class="ico vibe">〰</span></div><div class="sensor-val" id="vibration">0.18<span class="sensor-unit"> g RMS*</span></div><div class="sensor-meta">Derived display estimate, not a calibrated diagnosis</div></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Data quality</h2><span class="sub">Current session</span></div>
+        <div class="sensor-grid">
+          <div class="sensor"><div class="sensor-head"><h3>Samples saved</h3><span class="ico">▤</span></div><div class="sensor-val" id="samples">0</div><div class="sensor-meta">Target: <span id="sampleTarget">1500</span></div></div>
+          <div class="sensor"><div class="sensor-head"><h3>Sample rate</h3><span class="ico">⌁</span></div><div class="sensor-val">5<span class="sensor-unit"> Hz</span></div><div class="sensor-meta">Target interval: 200 ms</div></div>
+          <div class="sensor"><div class="sensor-head"><h3>Session total</h3></div><div class="sensor-val" id="totalSamples">0</div><div class="sensor-meta">Across all stages</div></div>
+          <div class="sensor"><div class="sensor-head"><h3>Fault state</h3></div><div class="sensor-val" id="qualityState" style="font-size:16px">Waiting</div><div class="sensor-meta" id="qualityDetail">Connect a data source to show live validity.</div></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Activity log</h2><button class="btn small" id="clearLog">Clear</button></div>
+        <div class="log" id="activityLog">
+          <div class="logrow"><span class="logtime">--:--:--</span><i class="logdot"></i><span>Dashboard ready. Demo values are illustrative, not hardware readings.</span></div>
+        </div>
+      </section>
+
+      <div class="notice"><strong style="color:var(--text)">Integration note</strong><br>This page is the frontend only. Demo mode animates sample values. Actual ESP32 serial telemetry and recording controls require a local bridge/API connected to the existing Python serial logger. No MQTT is used by this UI.</div>
+    </aside>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="stageModal"><div class="modal">
+  <div class="panel-head"><h2>Prepare next recording</h2><span class="tag">Confirmation required</span></div>
+  <p>Select a condition. The timer will reset to 00:00 when recording starts. Recording never starts automatically and changing stages while recording is blocked until you stop.</p>
+  <label for="stageSelect" class="sub">Condition to record</label>
+  <select id="stageSelect" style="display:block;width:100%;margin-top:7px;padding:12px;background:#0b1626;color:var(--text);border:1px solid var(--line);border-radius:10px">
+    <option value="normal">✓ Normal — baseline operation</option>
+    <option value="overheated">♨ Overheated — thermal anomaly</option>
+    <option value="vibration_issue">〰 Vibration issue — abnormal vibration</option>
+    <option value="rpm_issue">◉ RPM issue — speed anomaly</option>
+  </select>
+  <div class="notice" style="margin-top:13px">Target: <strong style="color:var(--text)">5 minutes · 5 Hz · 1500 readings</strong>. This page only labels the condition; it does not create faults.</div>
+  <div class="modal-actions"><button class="btn" id="cancelStage">Cancel</button><button class="btn primary" id="confirmStage">Confirm & start</button></div>
+</div></div>
+
+<script>
+const TARGET_SECONDS=300, TARGET_ROWS=1500;
+const stages={normal:{label:"Normal",icon:"✓"},overheated:{label:"Overheated",icon:"♨"},vibration_issue:{label:"Vibration issue",icon:"〰"},rpm_issue:{label:"RPM issue",icon:"◉"}};
+const $=id=>document.getElementById(id);
+let latestState=null, lastEventId=0, lastTelemetrySeq=-1, history=[], offlineRows=[], offlinePreview=false, polling=false;
+const fmt=(n,d=2)=>n===null||n===undefined||n===""||!Number.isFinite(Number(n))?"—":Number(n).toFixed(d);
+function addLog(msg,level="info",time=null){const row=document.createElement("div");row.className="logrow "+(level==="error"?"warn":level);const t=document.createElement("span");t.className="logtime";t.textContent=time||new Date().toLocaleTimeString("en-GB",{hour12:false});const dot=document.createElement("i");dot.className="logdot";const text=document.createElement("span");text.textContent=msg;row.append(t,dot,text);$("activityLog").prepend(row);while($("activityLog").children.length>40)$("activityLog").lastElementChild.remove()}
+async function api(path,body=null){const options={method:body===null?"GET":"POST",headers:{}};if(body!==null){options.headers["Content-Type"]="application/json";options.body=JSON.stringify(body)}const res=await fetch(path,options);let data;if((res.headers.get("content-type")||"").includes("application/json"))data=await res.json();else data={ok:res.ok};if(!res.ok||data.ok===false)throw new Error(data.error||`HTTP ${res.status}`);return data}
+function renderTelemetry(t){
+  $("voltage").textContent=fmt(t.voltage,2);$("current").textContent=fmt(t.current,1);$("temperature").textContent=fmt(t.temperature,2);$("cps").textContent=fmt(t.cps,0);$("rpm").textContent=t.rpm===null||t.rpm===undefined||Number(t.counts_per_rev||0)<=0?"unconfigured":fmt(t.rpm,1);
+  $("tempFoot").textContent=`DS18B20 • ${t.temperature_valid?"valid":"invalid / unavailable"}`;
+  $("speed").textContent=fmt(t.speed,0);$("pwm").textContent=fmt(t.pwm,0);$("direction").textContent=t.direction||"—";$("encoder").textContent=t.encoder===null?"—":Math.round(Number(t.encoder||0)).toLocaleString();$("encoderDelta").textContent=t.encoder_delta===null?"—":Math.round(Number(t.encoder_delta||0)).toLocaleString();$("power").textContent=fmt(t.power,1);$("fault").textContent=t.fault||"none";
+  $("ax").textContent=fmt(t.ax,3);$("ay").textContent=fmt(t.ay,3);$("az").textContent=fmt(t.az,3);$("vibration").textContent=fmt(t.vibration_index_g,3)+" g RMS*";
+  $("motorState").textContent=t.motor_running?"Running":"Stopped";$("motorLed").className="led "+(t.motor_running?"green":"");
+  $("mpuStatus").innerHTML=`<i class="led ${t.mpu_valid?"green":"amber"}"></i> ${t.mpu_valid?"valid":"unavailable"}`;
+  $("qualityState").textContent=(t.fault&&t.fault!=="none"&&t.fault!=="boot")?"FAULT":(t.ina_valid&&t.mpu_valid?"Nominal":"Partial data");
+  $("qualityDetail").textContent=(t.fault&&t.fault!=="none"&&t.fault!=="boot")?String(t.fault):`INA219 ${t.ina_valid?"valid":"not valid"} · MPU6050 ${t.mpu_valid?"valid":"not valid"} · DS18B20 ${t.temperature_valid?"valid":"not valid"}`;
+}
+function renderStageCards(s){const counts=s.counts||{};document.querySelectorAll(".stage").forEach(el=>{const key=el.dataset.stage, active=s.recording&&s.active_stage===key, pending=s.pending_stage===key, done=!active&&!pending&&(counts[key]||0)>=TARGET_ROWS;el.classList.toggle("active",active);const state=el.querySelector(".state");state.innerHTML=`<i class="led ${active?"red":done?"green":pending?"amber":""}"></i> ${active?"Recording":pending?"Starting":done?"Target met":(counts[key]||0)>0?"Saved / paused":"Standby"}`;el.querySelector(".stage-count").textContent=`${Number(counts[key]||0).toLocaleString()} / ${TARGET_ROWS} samples`;el.querySelector(".progress span").style.width=Math.min(100,((counts[key]||0)/TARGET_ROWS)*100)+"%"})}
+function renderTimer(s){const elapsed=(s.pending_stage&&!s.recording)?0:Math.max(0,Number(s.stage_elapsed_ms||0)),sec=Math.floor(elapsed/1000),mm=String(Math.floor(sec/60)).padStart(2,"0"),ss=String(sec%60).padStart(2,"0");$("timer").innerHTML=`${mm}:${ss} <span style="font-size:13px;color:var(--muted);font-weight:500">/ 05:00</span>`;$("timerProgress").style.width=Math.min(100,elapsed/(TARGET_SECONDS*1000)*100)+"%";if(s.recording)$("timerHint").textContent=sec>=TARGET_SECONDS?"5-minute target reached. Recording remains active until you stop it.":"Recording is active. Stop to finish this stage.";else if(s.pending_stage)$("timerHint").textContent="Start request sent; waiting for ESP32 acknowledgment.";else $("timerHint").textContent=s.display_stage?"Stage is not recording. Starting a new stage resets the timer.":"Choose a stage and confirm to begin recording."}
+function renderState(s){latestState=s;const connected=!!s.serial_connected;const fresh=connected&&s.telemetry_updated_at&&Date.now()/1000-s.telemetry_updated_at<4;
+  $("sourceLed").className="led "+(fresh?"green":connected?"amber":"red");$("sourceLabel").textContent=fresh?"LIVE SERIAL":connected?"SERIAL CONNECTED · WAITING DATA":"ESP32 DISCONNECTED";$("demoToggle").textContent="Refresh status";$("lastUpdate").textContent=s.telemetry_updated_at?"Updated "+new Date(s.telemetry_updated_at*1000).toLocaleTimeString("en-GB",{hour12:false}):"Waiting for telemetry…";
+  $("recordLed").className="led "+(s.recording?"red":s.pending_stage?"amber":"");$("recordLabel").textContent=s.recording?`Recording ${stages[s.active_stage]?.label||s.active_stage}`:s.pending_stage?"Start pending":"Recording OFF";
+  $("stopRecord").disabled=!s.recording;$("chooseStage").disabled=!connected||!!s.recording||!!s.pending_stage;$("exportCsv").disabled=!s.data_file;document.querySelectorAll("[data-motor-command]").forEach(btn=>btn.disabled=!connected);
+  const currentStage=s.display_stage;$("activeStageText").textContent=s.recording?`● ${stages[s.active_stage]?.label||s.active_stage} — RECORDING`:s.pending_stage?`◌ ${stages[s.pending_stage]?.label||s.pending_stage} — START REQUESTED`:currentStage?(stages[currentStage]?.label||currentStage):"No active stage";
+  const displayedCount=s.recording?Number(s.stage_rows||0):Number((s.counts||{})[currentStage]||0);
+  $("activeStageDetail").textContent=s.recording?`${displayedCount.toLocaleString()} / ${TARGET_ROWS} samples • 5 Hz target`:s.pending_stage?"Waiting for the board to confirm the start.":currentStage?`${displayedCount.toLocaleString()} samples in the most recent run of this stage.`:"The timer resets when a new stage starts.";
+  $("samples").textContent=displayedCount.toLocaleString();$("sampleTarget").textContent=TARGET_ROWS;$("totalSamples").textContent=Number(s.total_rows||0).toLocaleString();
+  if(!connected){$("qualityDetail").textContent=s.serial_error||"Run the Python bridge with the ESP32 serial port."}
+  renderTelemetry(s.telemetry||{});renderStageCards(s);renderTimer(s);
+  const events=s.events||[];for(const e of events){if(e.id>lastEventId){addLog(e.message,e.level,e.time);lastEventId=Math.max(lastEventId,e.id)}}
+  if(s.telemetry_seq!==lastTelemetrySeq&&s.telemetry_seq!==undefined){lastTelemetrySeq=s.telemetry_seq;const t=s.telemetry||{};if(t.voltage!==null&&t.voltage!==undefined)history.push({voltage:Number(t.voltage),current:Number(t.current||0),temperature:Number(t.temperature||0)});if(history.length>120)history.shift();drawChart()}
+}
+async function poll(){if(polling)return;polling=true;try{const s=await api("/api/state");renderState(s)}catch(err){$("sourceLed").className="led red";$("sourceLabel").textContent="BRIDGE UNAVAILABLE";$("lastUpdate").textContent="No local bridge response";}finally{polling=false}}
+function drawChart(){const c=$("chart"),ctx=c.getContext("2d"),rect=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;c.width=Math.max(1,rect.width*dpr);c.height=Math.max(1,rect.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);const w=rect.width,h=rect.height;ctx.clearRect(0,0,w,h);ctx.strokeStyle="#24364b";ctx.lineWidth=1;ctx.fillStyle="#8196b3";ctx.font="10px system-ui";for(let i=0;i<5;i++){const y=12+i*(h-30)/4;ctx.beginPath();ctx.moveTo(35,y);ctx.lineTo(w-8,y);ctx.stroke();ctx.fillText(String(12-i*.5),4,y+3)}if(history.length<2){ctx.fillStyle="#91a4bf";ctx.font="12px system-ui";ctx.fillText("Waiting for live telemetry…",45,h/2);return}const series=[["voltage","#5ee7f5",v=>12+(12.2-v)*((h-35)/2.2)],["current","#ffcc66",v=>12+(300-v/1.3)*((h-35)/300)],["temperature","#b6a0ff",v=>12+(40-v)*((h-35)/40)]];for(const [key,color,scale] of series){ctx.strokeStyle=color;ctx.lineWidth=2;ctx.beginPath();history.forEach((p,i)=>{const x=35+i*(w-47)/Math.max(1,history.length-1),y=Math.max(12,Math.min(h-18,scale(Number(p[key]||0))));i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke()}}
+$("chooseStage").onclick=()=>{if(latestState?.recording||latestState?.pending_stage){addLog("Stop or wait for the current stage before selecting another.","warn");return}$("stageModal").classList.add("show")};
+$("cancelStage").onclick=()=>$("stageModal").classList.remove("show");
+$("confirmStage").onclick=async()=>{const stage=$("stageSelect").value;try{await api("/api/stage/start",{stage});$("stageModal").classList.remove("show");addLog(`Start requested: ${stages[stage].label}. Waiting for the ESP32 acknowledgment.`,`warn`);await poll()}catch(err){alert("Could not start recording: "+err.message);addLog("Start rejected: "+err.message,"error")}};
+$("stopRecord").onclick=async()=>{try{await api("/api/stage/stop",{});addLog("Stop requested. Waiting for LOG_STOPPED from ESP32.","warn");await poll()}catch(err){alert("Could not stop recording: "+err.message);addLog("Stop request failed: "+err.message,"error")}};
+document.querySelectorAll("[data-motor-command]").forEach(btn=>btn.addEventListener("click",async()=>{const command=btn.dataset.motorCommand;if(!latestState?.serial_connected){alert("ESP32 is not connected. Start aegisot_web_bridge.py with the correct serial port.");return}if(command==="stop"&&!confirm("Send motor STOP now?"))return;try{const r=await api("/api/motor/command",{command});addLog(r.message||`Motor command: ${command}`,command==="stop"?"warn":"info");await poll()}catch(err){alert("Motor command failed: "+err.message);addLog("Motor command failed: "+err.message,"error")}}));
+$("demoToggle").onclick=()=>poll();
+$("clearHistory").onclick=()=>{if(latestState?.recording){alert("Stop recording before resetting display counters.");return}addLog("Display refreshed; saved CSV files are unchanged.");history=[];drawChart();poll()};
+$("clearLog").onclick=()=>{$("activityLog").innerHTML="";lastEventId=latestState?.events?.length?Math.max(...latestState.events.map(e=>e.id)):lastEventId;addLog("Activity log cleared.")};
+$("exportCsv").onclick=()=>{window.location.href="/api/export"};
+$("csvFile").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{const text=await f.text(),lines=text.trim().split(/\r?\n/),headers=lines.shift().split(","),parsed=lines.map(line=>{const vals=line.split(",");return Object.fromEntries(headers.map((h,i)=>[h,vals[i]??""]))});offlineRows=parsed;if(parsed.length){const r=parsed[parsed.length-1];if(!latestState?.serial_connected){const t={voltage:r.bus_voltage_v,current:r.current_ma,temperature:r.temperature_c,cps:r.encoder_counts_per_second,rpm:r.rpm_valid==="1"?r.rpm:null,speed:r.speed_percent,pwm:r.pwm_duty_8bit,direction:r.motor_direction,encoder:r.encoder_count,encoder_delta:r.encoder_delta,power:r.power_mw,ax:r.accel_x_m_s2,ay:r.accel_y_m_s2,az:r.accel_z_m_s2,mpu_valid:r.mpu_data_valid==="1",ina_valid:r.power_data_valid==="1",temperature_valid:r.temperature_valid==="1",motor_running:r.motor_running==="1",fault:r.last_motor_stop_reason,vibration_index_g:null};renderTelemetry(t);history=parsed.slice(-120).map(q=>({voltage:Number(q.bus_voltage_v||0),current:Number(q.current_ma||0),temperature:Number(q.temperature_c||0)}));drawChart();offlinePreview=true}addLog(`Imported ${parsed.length} CSV rows from ${f.name}. Real serial telemetry takes priority when connected.`,"ok")}else addLog("CSV file contains no data rows.","warn")}catch(err){alert("Could not read CSV: "+err.message)}});
+window.addEventListener("resize",drawChart);
+addLog("Connect using the local Python bridge. This page does not use MQTT.","info");drawChart();poll();setInterval(poll,500);setInterval(()=>{if(latestState)renderTimer(latestState)},250);
+</script>
+</body></html>

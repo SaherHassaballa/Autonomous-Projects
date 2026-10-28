@@ -1,0 +1,17 @@
+{
+  "enabled": true,
+  "host": "091b71eb24541b4a5593fa28711f867.s1.eu.hivemq.cloud",
+  "port": 8883,
+  "username": "SaherHassaballa",
+  "password": "Saher12345678",
+  "client_id": "aegisot-python-bridge",
+  "device_id": "aegisot-node-01",
+  "base_topic": "factory/devices/aegisot-node-01",
+  "tls": true,
+  "qos": 0,
+  "publish_idle_interval_seconds": 1.0,
+  "publish_recording_interval_seconds": 0.2,
+  "retain_status": true,
+  "retain_telemetry": false,
+  "retain_sensor_topics": false
+}
